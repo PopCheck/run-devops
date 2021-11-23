@@ -7,17 +7,30 @@ namespace Shopping.API.Data
 {
     public class ProductContext
     {
-        public ProductContext(IConfi5guration configuration)
+        public ProductContext(IConfiguration configuration)
         {
             var client = new MongoClient(configuration["DatabaseSettings:ConnectionString"]);
             var database = client.GetDatabase(configuration["DatabaseSettings:DatabaseName"]);
             Products = database.GetCollection<Product>(configuration["DatabaseSettings:CollectionName"]);
 
+            SeedData(Products);
         }
 
-        public static readonly List<Product> Products = new()
+        public IMongoCollection<Product> Products { get; }
+
+        private static void SeedData(IMongoCollection<Product> productCollection)
         {
-            new Product()
+            if (!productCollection.Find(p => true).Any())
+            {
+                productCollection.InsertManyAsync(GetPreconfiguredProducts());
+            }
+        }
+
+        private static IEnumerable<Product> GetPreconfiguredProducts()
+        {
+            return new List<Product>()
+            {
+                new Product()
                 {
                     Name = "IPhone X",
                     Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
@@ -65,6 +78,7 @@ namespace Shopping.API.Data
                     Price = 240.00M,
                     Category = "Home Kitchen"
                 }
-        };
+            };
+        }
     }
 }
